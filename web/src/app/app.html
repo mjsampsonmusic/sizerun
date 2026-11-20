@@ -1,0 +1,34 @@
+<header class="topbar">
+  <div class="brand">
+    <span class="logo" aria-hidden="true">SR</span>
+    <div>
+      <h1>SizeRun</h1>
+      <p class="tagline">Live stock and orders for every size</p>
+    </div>
+  </div>
+  <label class="store-picker">
+    <span>Store</span>
+    <select (change)="onStoreChange($event)">
+      @for (store of shop.stores(); track store.code) {
+        <option [value]="store.code" [selected]="store.code === shop.storeCode()">
+          {{ store.name }}
+        </option>
+      }
+    </select>
+  </label>
+</header>
+
+<main class="layout">
+  <section aria-labelledby="catalog-title">
+    <div class="section-head">
+      <h2 id="catalog-title">Size runs</h2>
+      <p class="muted small">Stock updates after every order and cancel.</p>
+    </div>
+    <app-catalog />
+  </section>
+
+  <aside class="side">
+    <app-cart-panel />
+    <app-order-list />
+  </aside>
+</main>

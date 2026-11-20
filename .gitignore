@@ -1,0 +1,18 @@
+# Java
+inventory-service/target/
+
+# Python
+__pycache__/
+.pytest_cache/
+.venv/
+
+# Node and Angular
+web/node_modules/
+web/dist/
+web/.angular/
+
+# Editors and OS files
+.idea/
+.vscode/
+*.iml
+.DS_Store

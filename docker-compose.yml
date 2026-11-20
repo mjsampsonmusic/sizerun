@@ -1,0 +1,55 @@
+# The whole system on one machine: docker compose up --build, then open http://localhost:4200
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sizerun
+      POSTGRES_PASSWORD: sizerun
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # -h localhost waits for the real server, not the temporary one that runs the init scripts
+      test: ["CMD", "pg_isready", "-h", "localhost", "-U", "sizerun"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  inventory-service:
+    build: ./inventory-service
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/inventory
+      DB_USER: sizerun
+      DB_PASSWORD: sizerun
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: on-failure
+
+  order-service:
+    build: ./order-service
+    environment:
+      DATABASE_URL: postgresql+psycopg://sizerun:sizerun@postgres:5432/orders
+      INVENTORY_URL: http://inventory-service:8080
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: on-failure
+
+  web:
+    build: ./web
+    ports:
+      - "4200:80"
+    depends_on:
+      - inventory-service
+      - order-service
+    restart: on-failure
+
+volumes:
+  pgdata:

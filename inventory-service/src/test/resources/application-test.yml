@@ -1,0 +1,4 @@
+spring:
+  datasource:
+    # A separate database so tests never touch local data. CI points this at its own PostgreSQL.
+    url: ${TEST_DB_URL:jdbc:postgresql://localhost:5432/inventory_test}

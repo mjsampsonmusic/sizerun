@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: inventory-service
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/inventory}
+    username: ${DB_USER:sizerun}
+    password: ${DB_PASSWORD:sizerun}
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Flyway owns the schema (src/main/resources/db/migration); Hibernate never changes it.
+      ddl-auto: none
+  mvc:
+    problemdetails:
+      enabled: true
+
+server:
+  port: ${PORT:8080}
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      # Adds /actuator/health/liveness and /actuator/health/readiness for Kubernetes probes
+      probes:
+        enabled: true
