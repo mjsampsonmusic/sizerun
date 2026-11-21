@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from './api';
 import { CartLine, addToCart, cartCount, cartTotal, setQuantity, syncWithCatalog } from './cart';
 import { Order, SizeOption, StoreLocation, Style } from './models';
+import { newUuid } from './uuid';
 
 export interface Notice {
   kind: 'success' | 'warning' | 'error';
@@ -79,7 +80,7 @@ export class Shop {
     if (cart.length === 0 || this.busy()) {
       return;
     }
-    const key = (this.pendingKey ??= newIdempotencyKey());
+    const key = (this.pendingKey ??= newUuid());
     const lines = cart.map((line) => ({ sku: line.sku, quantity: line.quantity }));
     this.busy.set(true);
     try {
@@ -181,16 +182,4 @@ function problemDetail(error: unknown): string | undefined {
     return typeof detail === 'string' ? detail : undefined;
   }
   return undefined;
-}
-
-/** crypto.randomUUID only exists on HTTPS or localhost, so fall back to getRandomValues elsewhere. */
-export function newIdempotencyKey(): string {
-  if (typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  const bytes = crypto.getRandomValues(new Uint8Array(16));
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }

@@ -2,6 +2,8 @@
 
 Live store inventory and ordering, one shoe size at a time. SizeRun is a full-stack microservices app: a **Java and Spring Boot** inventory service, a **Python and Flask** order service, and an **Angular and TypeScript** web app, each service with its own **PostgreSQL** database. It runs in **Docker**, deploys to **Kubernetes**, and every commit is built, tested end to end, and published by **GitHub Actions**.
 
+**Live demo: [mjsampsonmusic.github.io/sizerun](https://mjsampsonmusic.github.io/sizerun/)**, the store screen running in your browser with both services simulated on sample data ([how the demo works](#live-demo)).
+
 ![The SizeRun store screen: size runs with live stock, a new order, and recent orders](docs/screenshot.png)
 
 ## Why I built it
@@ -63,13 +65,19 @@ Open http://localhost:4200. In another terminal, run the end-to-end check:
 bash scripts/smoke-test.sh
 ```
 
+## Live demo
+
+The [live demo](https://mjsampsonmusic.github.io/sizerun/) is the same Angular app, built with `npm run build:demo`. In that build, an Angular HTTP interceptor (`web/src/app/demo/`) answers the app's `/api` calls inside the browser instead of over the network. It follows the same rules as the two services: all-or-nothing reservations, `Idempotency-Key` replays, pending orders during an outage, and cancels that put stock back once. It also opens with the same stock as the database seed.
+
+To see the retry design work, tick **Simulate an inventory outage**, place an order, then untick it and press **Retry**: the pending order is confirmed, not duplicated. A page refresh starts over. A separate workflow ([pages.yml](.github/workflows/pages.yml)) publishes the demo to GitHub Pages on every push to `main`.
+
 ## Tests
 
 | Suite | What it covers | Command |
 | --- | --- | --- |
 | `inventory-service` | 11 JUnit tests on a real PostgreSQL database: REST API, all-or-nothing reservations, a 20-thread race, the deadlock check | `make db` then `make test-inventory` |
 | `order-service` | 25 pytest tests: idempotent orders, inventory outages, cancels, validation, the HTTP client | `make db` then `make test-orders` |
-| `web` | 14 Vitest tests: cart rules, API calls, the order flow, rendering | `make test-web` |
+| `web` | 23 Vitest tests: cart rules, API calls, the order flow, rendering, and the demo's stand-in services | `make test-web` |
 | End to end | The Docker Compose stack: order, retry, reject, and cancel through nginx | `make up` then `make smoke` |
 
 ## CI/CD
@@ -79,6 +87,7 @@ GitHub Actions runs on every push and pull request ([workflow](.github/workflows
 1. Builds and tests the three services in parallel. The Java and Python suites run against a PostgreSQL service container.
 2. Starts the whole stack with Docker Compose and runs the smoke test against it.
 3. On `main`, publishes all three images to GitHub Container Registry, tagged with the commit SHA and `latest`.
+4. A separate workflow builds the live demo and publishes it to GitHub Pages.
 
 ## Deploy to Kubernetes
 
@@ -115,7 +124,7 @@ Order service, port 8000:
 ```
 inventory-service/   Java 21 + Spring Boot: catalog, stock, reservations, Flyway migrations, JUnit tests
 order-service/       Python 3.13 + Flask: orders, inventory client, pytest tests
-web/                 Angular 22 + TypeScript: store screen, Vitest tests, nginx config
+web/                 Angular 22 + TypeScript: store screen, demo mode, Vitest tests, nginx config
 k8s/                 Kubernetes manifests (kubectl apply -k k8s/)
 db/init/             Creates one database per service for Docker Compose
 scripts/             End-to-end smoke test
